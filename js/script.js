@@ -28,30 +28,53 @@ const MON = [
   "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"
 ];
 
-const st = { season: "2025", gp: "", ses: "Sve", q: "", n: 9 };
+const st = {
+  season: "2025",
+  gp: "",
+  commentator: "",
+  ses: "Sve",
+  q: "",
+  n: 9
+};
+
 const $ = id => document.getElementById(id);
 let shown = [];
 
+
+
 function all() {
   const out = [];
-  
+
   GP.forEach(([g, d, sp], i) => {
     const [m, dd] = d.split("-").map(Number);
-    
+
     ["Kvalifikacije", ...(sp ? ["Sprint"] : []), "Trka"].forEach((s, k) => {
-      const base = { Kvalifikacije: 14, Sprint: 16, Trka: 24 }[s] + ((i * 7 + k * 3) % (s === "Trka" ? 30 : 9));
-      
+
+      const base =
+        { Kvalifikacije: 14, Sprint: 16, Trka: 24 }[s] +
+        ((i * 7 + k * 3) % (s === "Trka" ? 30 : 9));
+
       out.push({
-        g, 
-        s, 
-        k, 
-        dt: new Date(+st.season, m - 1, dd + (s === "Trka" ? 0 : -1)),
+        g,
+        s,
+        k,
+
+        commentator: i % 2 === 0 ? "Srpski" : "Hrvatski",
+
+        dt: new Date(
+          +st.season,
+          m - 1,
+          dd + (s === "Trka" ? 0 : -1)
+        ),
+
         title: `VN ${g} ${st.season}: ${s}`,
+
         dur: `${String(base).padStart(2, "0")}:${String((i * 13 + k * 17) % 60).padStart(2, "0")} min`
       });
+
     });
   });
-  
+
   return out.sort((a, b) => b.dt - a.dt || b.k - a.k);
 }
 
@@ -60,13 +83,21 @@ const pl = n => n === 1 ? "snimak" : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 1
 function render() {
   const q = st.q.trim().toLowerCase();
   
-  const list = all().filter(v => 
-    (!st.gp || v.g === st.gp) && 
-    (st.ses === "Sve" || v.s === st.ses) && 
+ const list = all().filter(v =>
+
+    (!st.gp || v.g === st.gp) &&
+
+    (!st.commentator || v.commentator === st.commentator) &&
+
+    (st.ses === "Sve" || v.s === st.ses) &&
+
     (!q || (v.title + " " + DESC[v.s]).toLowerCase().includes(q))
-  );
+);
   
-  const limited = !st.gp && !q;
+  const limited =
+  !st.gp &&
+  !st.commentator &&
+  !q;
   shown = limited ? list.slice(0, st.n) : list;
   
   $("title").textContent = st.gp ? `VN ${st.gp} ${st.season}` : q ? "Rezultati pretrage" : "Najnovije u arhivi";
@@ -88,6 +119,16 @@ function render() {
         <div class="info">
           <h3>${v.title}</h3>
           <p>${DESC[v.s]}</p>
+
+<p style="
+  color:#e10600;
+  font-size:.9rem;
+  margin-top:8px;
+  font-weight:600;
+">
+  Komentator: ${v.commentator}
+</p>
+
           <div class="meta">
             <span>${v.dt.getDate()}. ${MON[v.dt.getMonth()]} ${v.dt.getFullYear()}.</span>
             <em>${v.dur}</em>
@@ -107,16 +148,21 @@ $("seg").innerHTML = SES.map(s => `<button type="button">${s}</button>`).join(""
 
 $("season").onchange = e => { st.season = e.target.value; st.n = 9; render(); };
 $("gp").onchange = e => { st.gp = e.target.value; render(); };
+$("commentator").onchange = e => {
+    st.commentator = e.target.value;
+    render();
+};
 $("q").oninput = e => { st.q = e.target.value; st.n = 9; render(); };
 $("seg").onclick = e => { if (e.target.tagName === "BUTTON") { st.ses = e.target.textContent; render(); } };
 $("more").onclick = () => { st.n += 9; render(); };
 
 $("grid").onclick = e => {
-  const c = e.target.closest(".card");
-  if (!c) return;
-  $("ptitle").textContent = shown[+c.dataset.i].title;
-  $("player").showModal();
+    const card = e.target.closest(".card");
+    if (!card) return;
+
+    window.open(VIDEOS[0].link, "_blank");
 };
+
 
 $("close").onclick = () => $("player").close();
 $("player").onclick = e => { if (e.target.id === "player") e.target.close(); };
@@ -164,3 +210,33 @@ window.addEventListener("scroll", updateActiveNav);
 window.addEventListener("resize", updateActiveNav);
 
 updateActiveNav();
+
+function renderDataCard() {
+
+  const race = VIDEOS[0];
+
+  $("grid").innerHTML = `
+    <button class="card">
+
+      <div class="thumb" style="--c1:#9b000c;--c2:#e10600">
+        <span class="tag">${race.session}</span>
+        <b>${race.gp}</b>
+      </div>
+
+      <div class="info">
+        <h3>VN ${race.gp} ${race.season}</h3>
+
+        <p>Komentator: ${race.commentator}</p>
+
+        <div class="meta">
+          <span>${race.date}</span>
+          <em>${race.duration}</em>
+        </div>
+      </div>
+
+    </button>
+  `;
+}
+
+renderDataCard();
+

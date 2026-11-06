@@ -14,7 +14,7 @@
   <div class="top">
     <div class="bar">
       <nav aria-label="Glavna navigacija">
-            <a id="nav-home" href="#top">Home</a>
+            <a id="nav-home" href="#top">Početna</a>
             <a id="nav-arhiva" href="#season">Arhiva</a>
             <a id="nav-about" href="#o-nama-sekcija">O nama</a>
 </nav>
@@ -36,8 +36,18 @@
         <select id="season"><option>2025</option><option>2024</option></select></div>
       <div class="field"><label for="gp">Velika nagrada</label>
         <select id="gp"></select></div>
+              <div class="field">
+  <label for="commentator">Komentator</label>
+  <select id="commentator">
+    <option value="">Svi komentatori</option>
+    <option value="Srpski">Srpski</option>
+    <option value="Hrvatski">Hrvatski</option>
+  </select>
+</div>
       <div class="field search"><input id="q" type="search" placeholder="Pretraži arhivu, trke, vozače" aria-label="Pretraži arhivu"></div>
+
     </div>
+    
     <div class="seg" id="seg" role="group" aria-label="Sesija"></div>
   </section>
 
@@ -77,10 +87,11 @@
 </footer>
 
 <dialog id="player">
-  <div class="stage"><div><p style="margin:0 0 6px;font-size:1.1rem;color:#fff">Ovde ide video plejer</p><p style="margin:0">YouTube ili Vimeo embed se ubacuje umesto ovog polja.</p></div></div>
+  <div class="stage" id="video-stage"></div>
   <div class="dh"><h3 id="ptitle"></h3><button type="button" id="close">Zatvori</button></div>
 </dialog>
 
+<script src="./js/podaci.js"></script>
 <script src="./js/script.js"></script>
 </body>
 </html>

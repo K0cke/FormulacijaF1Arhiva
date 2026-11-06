@@ -1,0 +1,344 @@
+const SES_ORDER = ["Kvalifikacije", "Sprint", "Trka"];
+
+const DESC = {
+  Kvalifikacije: "Cela kvalifikaciona sesija, od prvog do poslednjeg kruga.",
+  Sprint: "Sprint trka od starta do cilja, sa svim duelima.",
+  Trka: "Cela trka od formacionog kruga do kockaste zastave."
+};
+
+const COL = {
+  Kvalifikacije: ["#2a0509", "#6a0610"],
+  Sprint: ["#7a0610", "#c40a14"],
+  Trka: ["#9b000c", "#e10600"]
+};
+const COL_DEFAULT = ["#2a0509", "#9b000c"];
+
+const MON = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"];
+
+const st = { season: "", gp: "", commentator: "", ses: "", q: "", n: 9 };
+const $ = id => document.getElementById(id);
+let ALL = [];
+
+/* ---------- pomocne funkcije ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const clean = s => String(s ?? "").trim().replace(/\s+/g, " ");
+const key = s => clean(s).toLocaleLowerCase("sr");
+const coll = (a, b) => a.localeCompare(b, "sr");
+const uniq = a => [...new Set(a)];
+const rank = s => { const i = SES_ORDER.indexOf(s); return i < 0 ? 99 : i; };
+const pl = n => n === 1 ? "snimak" : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 > 20)) ? "snimka" : "snimaka";
+
+// isto ime napisano drugacije (spa / Spa / SPA) postaje jedna stavka
+// ako je prvi unos sav malim slovima ("spa"), prikazuje se sa velikim pocetnim slovom ("Spa")
+const pretty = s => s === s.toLocaleLowerCase("sr") ? s.replace(/(^|[\s-])(\S)/g, (m, a, b) => a + b.toLocaleUpperCase("sr")) : s;
+const canon = (map, v) => { const k = key(v); if (!map.has(k)) map.set(k, pretty(clean(v))); return map.get(k); };
+
+function fixLink(s) {
+  s = clean(s);
+  if (!s) return "";
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  try { const u = new URL(s); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; }
+}
+
+function parseDate(s) {
+  s = clean(s);
+  let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+  if ((m = s.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/))) return new Date(+m[3], +m[2] - 1, +m[1]);
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return new Date(+m[3], +m[1] - 1, +m[2]);
+  return null;
+}
+
+function prepare(raw) {
+  const gps = new Map(), coms = new Map(), ses = new Map(SES_ORDER.map(s => [key(s), s]));
+  const out = [];
+  raw.forEach((r, idx) => {
+    const season = clean(r.season), gp = clean(r.gp), session = clean(r.session), link = fixLink(r.link);
+    if (!season || !gp || !session || !link) return;   // nepotpun red se preskace
+    out.push({
+      season, link, idx,
+      gp: canon(gps, gp),
+      session: canon(ses, session),
+      commentator: canon(coms, r.commentator),
+      date: parseDate(r.date),
+      duration: clean(r.duration)
+    });
+  });
+  return out;
+}
+
+// najnovije prvo: sezona, datum (ako postoji), sesija, pa redosled unosa u tabeli
+const cmp = (a, b) =>
+  (+b.season - +a.season) ||
+  ((b.date ? +b.date : 0) - (a.date ? +a.date : 0)) ||
+  (rank(b.session) - rank(a.session)) ||
+  (b.idx - a.idx);
+
+/* ---------- filteri se prave iz podataka ---------- */
+function renderFilters() {
+  const seasons = uniq(ALL.map(v => v.season)).sort((a, b) => (+b - +a) || coll(b, a));
+  if (!seasons.includes(st.season)) st.season = seasons[0] || "";
+  $("season").innerHTML = seasons.map(s => `<option${s === st.season ? " selected" : ""}>${esc(s)}</option>`).join("");
+
+  const inS = ALL.filter(v => v.season === st.season);
+  const gps = uniq(inS.map(v => v.gp)).sort(coll);
+  if (!gps.includes(st.gp)) st.gp = "";
+  $("gp").innerHTML = `<option value="">Sve Velike nagrade</option>` +
+    gps.map(g => `<option value="${esc(g)}"${g === st.gp ? " selected" : ""}>${esc(g)}</option>`).join("");
+
+  const inG = inS.filter(v => !st.gp || v.gp === st.gp);
+  const coms = uniq(inG.map(v => v.commentator).filter(Boolean)).sort(coll);
+  if (!coms.includes(st.commentator)) st.commentator = "";
+  $("commentator").innerHTML = `<option value="">Svi komentatori</option>` +
+    coms.map(c => `<option value="${esc(c)}"${c === st.commentator ? " selected" : ""}>${esc(c)}</option>`).join("");
+
+  const inC = inG.filter(v => !st.commentator || v.commentator === st.commentator);
+  const sess = uniq(inC.map(v => v.session)).sort((a, b) => (rank(a) - rank(b)) || coll(a, b));
+  if (!sess.includes(st.ses)) st.ses = "";
+  $("seg").innerHTML = ["", ...sess].map(s =>
+    `<button type="button" data-s="${esc(s)}" aria-pressed="${s === st.ses}">${s ? esc(s) : "Sve"}</button>`).join("");
+}
+
+/* ---------- prikaz kartica ---------- */
+function card(v) {
+  const [c1, c2] = COL[v.session] || COL_DEFAULT;
+  const when = v.date ? `${v.date.getDate()}. ${MON[v.date.getMonth()]} ${v.date.getFullYear()}.` : "";
+  return `
+    <a class="card" href="${esc(v.link)}" target="_blank" rel="noopener noreferrer">
+      <div class="thumb" style="--c1:${c1};--c2:${c2}">
+        <span class="tag">${esc(v.session)}</span>
+        <b>${esc(v.gp)}</b>
+        <span class="play">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff" style="margin-left:3px"><path d="M8 5v14l11-7z"/></svg>
+        </span>
+      </div>
+      <div class="info">
+        <h3>VN ${esc(v.gp)} ${esc(v.season)}: ${esc(v.session)}</h3>
+        ${DESC[v.session] ? `<p>${DESC[v.session]}</p>` : ""}
+        ${v.commentator ? `<p style="color:#e10600;font-size:.9rem;margin-top:8px;font-weight:600">Komentator: ${esc(v.commentator)}</p>` : ""}
+        ${(when || v.duration) ? `<div class="meta"><span>${when}</span><em>${esc(v.duration)}</em></div>` : ""}
+      </div>
+    </a>`;
+}
+
+function render() {
+  renderFilters();
+  const words = key(st.q).split(" ").filter(Boolean);
+  let list;
+  if (words.length) {
+    // pretraga trazi kroz celu arhivu
+    list = ALL.filter(v => {
+      const hay = key([v.season, v.gp, v.session, v.commentator].join(" "));
+      return words.every(w => hay.includes(w));
+    });
+  } else {
+    list = ALL.filter(v =>
+      v.season === st.season &&
+      (!st.gp || v.gp === st.gp) &&
+      (!st.commentator || v.commentator === st.commentator) &&
+      (!st.ses || v.session === st.ses));
+  }
+  list.sort(cmp);
+  const shown = list.slice(0, st.n);
+
+  $("title").textContent = words.length ? "Rezultati pretrage" : st.gp ? `VN ${st.gp} ${st.season}` : `Sezona ${st.season}`;
+  $("count").textContent = `${list.length} ${pl(list.length)}`;
+  $("grid").innerHTML = shown.length ? shown.map(card).join("")
+    : `<p class="empty">${ALL.length ? "Nema snimaka za ovaj izbor." : "Arhiva je trenutno prazna."}</p>`;
+  $("more").hidden = list.length <= shown.length;
+}
+
+/* ---------- dogadjaji ---------- */
+function change(fn) {
+  fn();
+  st.q = ""; $("q").value = "";   // promena filtera brise pretragu
+  st.n = 9;
+  render();
+}
+$("season").onchange = e => change(() => { st.season = e.target.value; st.gp = st.commentator = st.ses = ""; });
+$("gp").onchange = e => change(() => { st.gp = e.target.value; });
+$("commentator").onchange = e => change(() => { st.commentator = e.target.value; });
+$("seg").onclick = e => { const b = e.target.closest("button"); if (b) change(() => { st.ses = b.dataset.s; }); };
+$("q").oninput = e => { st.q = e.target.value; st.n = 9; render(); };
+$("more").onclick = () => { st.n += 9; render(); };
+
+/* ---------- ucitavanje ---------- */
+$("grid").innerHTML = `<p class="empty">Učitavanje arhive…</p>`;
+loadVideos()
+  .then(raw => { ALL = prepare(raw); render(); })
+  .catch(err => {
+    console.error(err);
+    $("grid").innerHTML = `<p class="empty">Arhiva trenutno nije dostupna. Probaj ponovo za nekoliko minuta.</p>`;
+  });
+
+/* ---------- navigacija ---------- */
+const bar = document.querySelector(".bar");
+const navLinks = { home: $("nav-home"), arhiva: $("nav-arhiva"), about: $("nav-about") };
+const aboutSection = $("o-nama-sekcija");
+
+function onScroll() {
+  bar.classList.toggle("fixed", window.scrollY > 120);
+  const trigger = aboutSection.offsetTop - 600;
+  const cur = window.scrollY < 10 ? "home" : window.scrollY >= trigger ? "about" : "arhiva";
+  for (const k in navLinks) navLinks[k].classList.toggle("active", k === cur);
+}
+window.addEventListener("scroll", onScroll);
+window.addEventListener("resize", onScroll);
+onScroll();
+
+
+
+
+
+
+
+
+// =====================================================
+// IZVOR PODATAKA
+// 1) Google tabela: File > Share > Publish to web > izaberi list i format "CSV" > Publish
+// 2) Nalepi dobijeni link izmedju navodnika ispod.
+// Dok je link prazan, sajt koristi probne podatke iz niza VIDEOS.
+// =====================================================
+const SHEET_CSV_URL = "";
+
+// Probni podaci (koriste se samo dok SHEET_CSV_URL nije popunjen)
+const VIDEOS = [
+  { season: "2025", gp: "Belgija", session: "Trka", commentator: "Srpski", date: "2025-03-05", duration: "01:59:46", link: "https://ok.ru/video/12040295221984" },
+  { season: "2005", gp: "Spa", session: "Trka", commentator: "Srpski", date: "", duration: "", link: "https://ok.ru/video/12040295221984" },
+  { season: "2005", gp: "Monako", session: "Kvalifikacije", commentator: "Hrvatski", date: "", duration: "", link: "https://ok.ru/video/12040295221984" }
+];
+
+// Kolone u tabeli (prvi red, tacno ovako): sezona | vn | sesija | komentator | link | datum | trajanje
+// datum i trajanje su opcioni.
+async function loadVideos() {
+  if (!SHEET_CSV_URL) return VIDEOS;
+  const res = await fetch(SHEET_CSV_URL);
+  if (!res.ok) throw new Error("Tabela nije dostupna: HTTP " + res.status);
+  return rowsToVideos(parseCSV(await res.text()));
+}
+
+function rowsToVideos(rows) {
+  const head = rows.shift().map(h => h.replace(/^\uFEFF/, "").trim().toLowerCase());
+  const col = name => head.indexOf(name);
+  return rows.map(r => ({
+    season: r[col("sezona")],
+    gp: r[col("vn")],
+    session: r[col("sesija")],
+    commentator: r[col("komentator")],
+    link: r[col("link")],
+    date: r[col("datum")],
+    duration: r[col("trajanje")]
+  }));
+}
+
+// Mali CSV parser (podrzava navodnike, zareze i nove redove unutar polja)
+function parseCSV(t) {
+  const rows = [];
+  let row = [], cell = "", inQ = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (inQ) {
+      if (c === '"') { if (t[i + 1] === '"') { cell += '"'; i++; } else inQ = false; }
+      else cell += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && t[i + 1] === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = "";
+    } else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FORMULACIJA Arhiva</title>
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,600;0,700;1,700;1,900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./css/style.css">
+<link rel="icon" href="./img/logo/logosaig.jpg" type="image/x-icon">
+</head>
+<body>
+
+<header>
+  <div class="top">
+    <div class="bar">
+      <nav aria-label="Glavna navigacija">
+        <a id="nav-home" href="#top">Početna</a>
+        <a id="nav-arhiva" href="#season">Arhiva</a>
+        <a id="nav-about" href="#o-nama-sekcija">O nama</a>
+      </nav>
+    </div>
+    <div class="stem" aria-hidden="true">
+      <svg viewBox="0 0 32 44" fill="#9b000c"><path d="M16 0c8 0 13 5 13 12v6c0 2-1 3-3 3H6c-2 0-3-1-3-3v-6C3 5 8 0 16 0z"/><rect x="7" y="8" width="18" height="6" rx="3" fill="#fff"/><rect x="9" y="24" width="14" height="20" rx="4"/></svg>
+    </div>
+    <h1 class="word">ORMULACIJA</h1>
+  </div>
+  <div class="rule"></div>
+</header>
+
+<main>
+  <p class="lead"><strong>Arhiva trka.</strong> Izaberi sezonu i Veliku nagradu i gledaj kvalifikacije, sprint ili trku u samo par klikova.</p>
+
+  <section class="tools" aria-label="Filteri arhive">
+    <div class="row">
+      <div class="field"><label for="season">Sezona</label>
+        <select id="season"></select></div>
+      <div class="field"><label for="gp">Velika nagrada</label>
+        <select id="gp"></select></div>
+      <div class="field"><label for="commentator">Komentator</label>
+        <select id="commentator"></select></div>
+      <div class="field search"><input id="q" type="search" placeholder="Pretraži arhivu, trke, vozače" aria-label="Pretraži arhivu"></div>
+    </div>
+
+    <div class="seg" id="seg" role="group" aria-label="Sesija"></div>
+  </section>
+
+  <div class="head"><h2 id="title">Arhiva</h2><span id="count"></span></div>
+  <section class="grid" id="grid" aria-live="polite"></section>
+  <button class="more" id="more" type="button" hidden>Prikaži još</button>
+</main>
+
+<!-- O NAMA SEKCIJA -->
+<section id="o-nama-sekcija" class="about-section">
+  <div class="about-container">
+    <div class="about-header">
+      <h2>• O NAMA •</h2>
+      <span class="about-subtitle">Kraljica Motosporta</span>
+    </div>
+    <div class="about-content">
+      <p>
+        Dobrodošli u centralnu arhivu posvećenu uzbuđenju, brzini i istoriji Formule 1. <strong>FORMULACIJA</strong> je nastala iz čiste strasti prema moto-sportu, sa jasnim ciljem da pruži vrhunsko mesto za pregledanje i očuvanje najvažnijih trenutaka svakog trkačkog vikenda.
+      </p>
+      <p>
+        Bilo da se radi o napetim kvalifikacijama, nepredvidivim sprint trkama ili borbi za podijum u poslednjem krugu, ovde je sve na jednom mestu, spakovano u čist, moderan i brz interfejs prilagođen pravim fanovima.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fin">
+    <div class="soc">
+      <a href="https://www.instagram.com/formulacija/" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="https://www.youtube.com/@formulacija" target="_blank" rel="noopener noreferrer">YouTube</a>
+      <a href="https://www.tiktok.com/@formulacija_" target="_blank" rel="noopener noreferrer">TikTok</a>
+    </div>
+    <small>© 2026 Formulacija. Sva prava zadržana.</small>
+  </div>
+</footer>
+
+<script src="./js/podaci.js"></script>
+<script src="./js/script.js"></script>
+</body>
+</html>
+
