@@ -1,15 +1,4 @@
-const GP = [
-  ["Australija", "03-16"], ["Kina", "03-23", 1], ["Japan", "04-06"], 
-  ["Bahrein", "04-13"], ["Saudijska Arabija", "04-20"], ["Majami", "05-04", 1], 
-  ["Emilija-Romanja", "05-18"], ["Monako", "05-25"], ["Španija", "06-01"], 
-  ["Kanada", "06-15"], ["Austrija", "06-29"], ["Velika Britanija", "07-06"], 
-  ["Belgija", "07-27", 1], ["Mađarska", "08-03"], ["Holandija", "08-31"], 
-  ["Italija", "09-07"], ["Azerbejdžan", "09-21"], ["Singapur", "10-05"], 
-  ["SAD", "10-19", 1], ["Meksiko", "10-26"], ["Brazil", "11-09", 1], 
-  ["Las Vegas", "11-22"], ["Katar", "11-30", 1], ["Abu Dabi", "12-07"]
-];
-
-const SES = ["Sve", "Kvalifikacije", "Sprint", "Trka"];
+const $ = id => document.getElementById(id);
 
 const DESC = {
   Kvalifikacije: "Cela kvalifikaciona sesija, od prvog do poslednjeg kruga.",
@@ -23,220 +12,224 @@ const COL = {
   Trka: ["#9b000c", "#e10600"]
 };
 
-const MON = [
-  "januara", "februara", "marta", "aprila", "maja", "juna", 
-  "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"
-];
+const PAGE = 9;   // koliko kartica se prikazuje odjednom
 
 const st = {
-  season: "2025",
+  season: "",
   gp: "",
   commentator: "",
-  ses: "Sve",
+  session: "",
   q: "",
-  n: 9
+  n: PAGE
 };
 
-const $ = id => document.getElementById(id);
-let shown = [];
+// bezbedan ispis teksta koji unosi klijent (apostrof, navodnik, < >)
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+}[c]));
 
+const warned = new Set();   // da se upozorenje o VN bez zastave ispise samo jednom
 
-
-function all() {
-  const out = [];
-
-  GP.forEach(([g, d, sp], i) => {
-    const [m, dd] = d.split("-").map(Number);
-
-    ["Kvalifikacije", ...(sp ? ["Sprint"] : []), "Trka"].forEach((s, k) => {
-
-      const base =
-        { Kvalifikacije: 14, Sprint: 16, Trka: 24 }[s] +
-        ((i * 7 + k * 3) % (s === "Trka" ? 30 : 9));
-
-      out.push({
-        g,
-        s,
-        k,
-
-        commentator: i % 2 === 0 ? "Srpski" : "Hrvatski",
-
-        dt: new Date(
-          +st.season,
-          m - 1,
-          dd + (s === "Trka" ? 0 : -1)
-        ),
-
-        title: `VN ${g} ${st.season}: ${s}`,
-
-        dur: `${String(base).padStart(2, "0")}:${String((i * 13 + k * 17) % 60).padStart(2, "0")} min`
-      });
-
-    });
-  });
-
-  return out.sort((a, b) => b.dt - a.dt || b.k - a.k);
-}
-
+const uniq = arr => [...new Set(arr)];
 const pl = n => n === 1 ? "snimak" : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 > 20)) ? "snimka" : "snimaka";
 
-function render() {
-  const q = st.q.trim().toLowerCase();
-  
- const list = all().filter(v =>
+// za pretragu: mala slova i bez dijakritika, pa "madjarska" nalazi "Mađarska"
+const fold = s => key(s)   // key() je u api.js
+  .replace(/đ/g, "dj").replace(/[čć]/g, "c").replace(/š/g, "s").replace(/ž/g, "z");
 
-    (!st.gp || v.g === st.gp) &&
+function getSeasons() {
+  return uniq(VIDEOS.map(v => v.season)).sort((a, b) => b - a);
+}
 
-    (!st.commentator || v.commentator === st.commentator) &&
+function populateSeasons() {
+  const seasons = getSeasons();
 
-    (st.ses === "Sve" || v.s === st.ses) &&
+  $("season").innerHTML = seasons
+    .map(s => `<option>${esc(s)}</option>`)
+    .join("");
 
-    (!q || (v.title + " " + DESC[v.s]).toLowerCase().includes(q))
-);
-  
-  const limited =
-  !st.gp &&
-  !st.commentator &&
-  !q;
-  shown = limited ? list.slice(0, st.n) : list;
-  
-  $("title").textContent = st.gp ? `VN ${st.gp} ${st.season}` : q ? "Rezultati pretrage" : "Najnovije u arhivi";
-  $("count").textContent = `${list.length} ${pl(list.length)}`;
-  
-  $("grid").innerHTML = shown.length ? shown.map((v, i) => {
-    const [c1, c2] = COL[v.s];
+  st.season = seasons[0] || "";
+}
+
+function populateGP() {
+  const gps = uniq(
+    VIDEOS
+      .filter(v => v.season === st.season)
+      .map(v => v.gp)
+  );
+
+  $("gp").innerHTML =
+    `<option value="">Sve Velike nagrade</option>` +
+    gps.map(gp => `<option value="${esc(gp)}">${esc(gp)}</option>`).join("");
+
+  st.gp = "";
+}
+
+// komentatori se uzimaju iz podataka za izabranu sezonu (i VN, ako je izabrana)
+function populateCommentators() {
+  const list = uniq(
+    VIDEOS
+      .filter(v => v.season === st.season && (!st.gp || v.gp === st.gp))
+      .map(v => v.commentator)
+      .filter(Boolean)
+  );
+
+  $("commentator").innerHTML =
+    `<option value="">Svi komentatori</option>` +
+    list.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+  // ako izabrani komentator ne postoji u novom izboru, vrati na "Svi"
+  if (!list.includes(st.commentator)) st.commentator = "";
+  $("commentator").value = st.commentator;
+}
+
+// dugmad sesije (Kvalifikacije / Sprint / Trka) - prikazuju se samo one koje postoje
+function populateSessions() {
+  const list = uniq(
+    VIDEOS
+      .filter(v =>
+        v.season === st.season &&
+        (!st.gp || v.gp === st.gp) &&
+        (!st.commentator || v.commentator === st.commentator))
+      .map(v => v.session)
+  ).sort((a, b) => rank(a) - rank(b));   // rank() je u api.js
+
+  if (!list.includes(st.session)) st.session = "";
+
+  $("seg").innerHTML = ["", ...list].map(s =>
+    `<button type="button" data-s="${esc(s)}" aria-pressed="${s === st.session}">${s ? esc(s) : "Sve"}</button>`
+  ).join("");
+}
+
+function renderCards() {
+  const words = fold(st.q).split(" ").filter(Boolean);
+
+  // dok se nesto kuca u pretragu, trazi se kroz celu arhivu (sve sezone)
+  const filtered = words.length
+    ? VIDEOS.filter(video => {
+        const hay = fold([video.season, video.gp, video.session, video.commentator].join(" "));
+        return words.every(w => hay.includes(w));
+      })
+    : VIDEOS.filter(video =>
+        video.season === st.season &&
+        (!st.gp || video.gp === st.gp) &&
+        (!st.commentator || video.commentator === st.commentator) &&
+        (!st.session || video.session === st.session)
+      );
+  const shown = filtered.slice(0, st.n);
+
+  $("title").textContent = words.length ? "Rezultati pretrage"
+    : st.gp ? `VN ${st.gp} ${st.season}` : `Sezona ${st.season}`;
+  $("count").textContent = `${filtered.length} ${pl(filtered.length)}`;
+  $("more").style.display = filtered.length > shown.length ? "block" : "none";
+
+  if (!shown.length) {
+    $("grid").innerHTML = `<p class="empty">${VIDEOS.length ? "Nema snimaka za ovaj izbor." : "Arhiva je trenutno prazna."}</p>`;
+    return;
+  }
+
+  $("grid").innerHTML = shown.map(video => {
+    const colors = COL[video.session] || ["#9b000c", "#e10600"];
+
+    // zastava drzave kao pozadina (tamni preliv da tekst ostane citljiv)
+    const flag = flagFor(video.gp, video.flag);
+    if (!flag && !warned.has(video.gp)) {
+      warned.add(video.gp);
+      console.warn("Nema zastave za VN:", video.gp, "- dodaj je u zastave.js ili u kolonu 'zastava'");
+    }
+    const bg = flag
+      ? `background:linear-gradient(180deg,rgba(14,14,17,.12) 0%,rgba(14,14,17,.82) 100%),url('${FLAG_URL(flag)}') center/cover no-repeat;`
+      : "";
+
     return `
-      <button class="card" type="button" data-i="${i}">
-        <div class="thumb" style="--c1:${c1};--c2:${c2}">
-          <span class="tag">${v.s}</span>
-          <b>${v.g}</b>
-          <span class="play">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff" style="margin-left:3px">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </span>
-        </div>
-        <div class="info">
-          <h3>${v.title}</h3>
-          <p>${DESC[v.s]}</p>
+      <a class="card" href="${esc(video.link)}" target="_blank" rel="noopener noreferrer">
 
-<p style="
-  color:#e10600;
-  font-size:.9rem;
-  margin-top:8px;
-  font-weight:600;
-">
-  Komentator: ${v.commentator}
-</p>
+        <div class="thumb" style="--c1:${colors[0]};--c2:${colors[1]};${bg}">
+          <span class="tag">${esc(video.session)}</span>
+          <b>${esc(video.gp)}</b>
+        </div>
+
+        <div class="info">
+          <h3>VN ${esc(video.gp)} ${esc(video.season)}</h3>
+
+          ${DESC[video.session] ? `<p>${DESC[video.session]}</p>` : ""}
+
+          ${video.commentator ? `
+            <p style="color:#e10600;font-weight:600;">
+              Komentator: ${esc(video.commentator)}
+            </p>` : ""}
 
           <div class="meta">
-            <span>${v.dt.getDate()}. ${MON[v.dt.getMonth()]} ${v.dt.getFullYear()}.</span>
-            <em>${v.dur}</em>
+            <span>${esc(video.date || "")}</span>
+            <em>${esc(video.duration || "")}</em>
           </div>
         </div>
-      </button>
+
+      </a>
     `;
-  }).join("") : `<p class="empty">Nema snimaka za ovaj izbor. Probaj drugu sesiju ili Veliku nagradu.</p>`;
-  
-  $("more").hidden = !(limited && list.length > shown.length);
-  [...$("seg").children].forEach(b => b.setAttribute("aria-pressed", b.textContent === st.ses));
+  }).join("");
 }
 
-// Inicijalizacija i događaji
-$("gp").innerHTML = `<option value="">Sve Velike nagrade</option>` + GP.map(g => `<option>${g[0]}</option>`).join("");
-$("seg").innerHTML = SES.map(s => `<button type="button">${s}</button>`).join("");
+// kad se promeni neki filter: osvezi zavisne filtere pa kartice
+function refresh() {
+  st.q = "";
+  $("q").value = "";   // promena filtera brise pretragu
+  populateCommentators();
+  populateSessions();
+  st.n = PAGE;
+  renderCards();
+}
 
-$("season").onchange = e => { st.season = e.target.value; st.n = 9; render(); };
-$("gp").onchange = e => { st.gp = e.target.value; render(); };
+function init() {
+  populateSeasons();
+  populateGP();
+  refresh();
+}
+
+$("grid").innerHTML = `<p class="empty">Učitavanje arhive…</p>`;
+$("more").style.display = "none";
+
+loadVideos()
+  .then(videos => { VIDEOS = videos; init(); })
+  .catch(err => {
+    console.error(err);
+    $("grid").innerHTML = `<p class="empty">Arhiva trenutno nije dostupna. Probaj ponovo za nekoliko minuta.</p>`;
+  });
+
+$("season").onchange = e => {
+  st.season = e.target.value;
+  populateGP();
+  refresh();
+};
+
+$("gp").onchange = e => {
+  st.gp = e.target.value;
+  refresh();
+};
+
 $("commentator").onchange = e => {
-    st.commentator = e.target.value;
-    render();
-};
-$("q").oninput = e => { st.q = e.target.value; st.n = 9; render(); };
-$("seg").onclick = e => { if (e.target.tagName === "BUTTON") { st.ses = e.target.textContent; render(); } };
-$("more").onclick = () => { st.n += 9; render(); };
-
-$("grid").onclick = e => {
-    const card = e.target.closest(".card");
-    if (!card) return;
-
-    window.open(VIDEOS[0].link, "_blank");
+  st.commentator = e.target.value;
+  refresh();
 };
 
+$("seg").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  st.session = b.dataset.s;
+  st.q = "";
+  $("q").value = "";
+  st.n = PAGE;
+  populateSessions();   // samo da se osvezi istaknuto dugme
+  renderCards();
+};
 
-$("close").onclick = () => $("player").close();
-$("player").onclick = e => { if (e.target.id === "player") e.target.close(); };
+$("more").onclick = () => {
+  st.n += PAGE;
+  renderCards();
+};
 
-render();
-
-
-const bar = document.querySelector(".bar");
-
-window.addEventListener("scroll", () => {
-  if (window.scrollY > 120) {
-    bar.classList.add("fixed");
-  } else {
-    bar.classList.remove("fixed");
-  }
-});
-
-
-const homeLink = document.getElementById("nav-home");
-const arhivaLink = document.getElementById("nav-arhiva");
-const aboutLink = document.getElementById("nav-about");
-const aboutSection = document.getElementById("o-nama-sekcija");
-
-function updateActiveNav() {
-
-    const scroll = window.scrollY;
-    const trigger = aboutSection.offsetTop - 600;
-
-    homeLink.classList.remove("active");
-    arhivaLink.classList.remove("active");
-    aboutLink.classList.remove("active");
-
-    if (scroll < 10) {
-        homeLink.classList.add("active");
-    } 
-    else if (scroll >= trigger) {
-        aboutLink.classList.add("active");
-    } 
-    else {
-        arhivaLink.classList.add("active");
-    }
-}
-
-window.addEventListener("scroll", updateActiveNav);
-window.addEventListener("resize", updateActiveNav);
-
-updateActiveNav();
-
-function renderDataCard() {
-
-  const race = VIDEOS[0];
-
-  $("grid").innerHTML = `
-    <button class="card">
-
-      <div class="thumb" style="--c1:#9b000c;--c2:#e10600">
-        <span class="tag">${race.session}</span>
-        <b>${race.gp}</b>
-      </div>
-
-      <div class="info">
-        <h3>VN ${race.gp} ${race.season}</h3>
-
-        <p>Komentator: ${race.commentator}</p>
-
-        <div class="meta">
-          <span>${race.date}</span>
-          <em>${race.duration}</em>
-        </div>
-      </div>
-
-    </button>
-  `;
-}
-
-renderDataCard();
-
+$("q").oninput = e => {
+  st.q = e.target.value;
+  st.n = PAGE;
+  renderCards();
+};
