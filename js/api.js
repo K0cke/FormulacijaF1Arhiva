@@ -1,6 +1,9 @@
 // Link dobijen posle deploy-a Apps Script web app-a (zavrsava se na /exec)
 const API_URL = "https://script.google.com/macros/s/AKfycbz_jtk_DZGO12gmC2ZRJjzvbbgBMGwpRRzoSA01a2cNBAN6iZUcMhd8D6iW3UaXXa9WVQ/exec";
 
+const CACHE_KEY = "formulacija-cache";
+const CACHE_TIME = 1000 * 60 * 2; // 2 minuta
+
 // Popunjava se kad stignu podaci iz tabele (vidi script.js)
 let VIDEOS = [];
  
@@ -10,10 +13,38 @@ const MON = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "
 /* ---------- ucitavanje ---------- */
 async function loadVideos() {
   if (!API_URL) throw new Error("API_URL nije podesen u api.js");
+
+  // Provera keša
+  const cache = localStorage.getItem(CACHE_KEY);
+  if (cache) {
+    try {
+      const parsed = JSON.parse(cache);
+      if (parsed && parsed.time && (Date.now() - parsed.time < CACHE_TIME) && parsed.data) {
+        return normalize(parsed.data);
+      }
+    } catch (e) {
+      // Ako je keš oštećen, nastavlja se dalje ka API-ju
+    }
+  }
+
   const res = await fetch(API_URL);
   if (!res.ok) throw new Error("API: HTTP " + res.status);
   const raw = await res.json();
   if (!Array.isArray(raw)) throw new Error("API nije vratio listu");
+
+  // Upis u keš
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        time: Date.now(),
+        data: raw
+      })
+    );
+  } catch (e) {
+    // Ignoriši grešku ako je localStorage pun
+  }
+
   return normalize(raw);
 }
  
