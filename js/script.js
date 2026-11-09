@@ -23,7 +23,7 @@ const st = {
   n: PAGE
 };
 
-// bezbedan ispis teksta koji unosi klijent (apostrof, navodnik, < >)
+// bezbedan ispis teksta (apostrof, navodnik, < >)
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
 }[c]));
@@ -33,7 +33,7 @@ const warned = new Set();   // da se upozorenje o VN bez zastave ispise samo jed
 const uniq = arr => [...new Set(arr)];
 const pl = n => n === 1 ? "snimak" : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 > 20)) ? "snimka" : "snimaka";
 
-// za pretragu: mala slova i bez dijakritika, pa "madjarska" nalazi "Mađarska"
+// za pretragu: mala slova i bez kvacica, pa "madjarska" == "Mađarska"
 const fold = s => key(s)   // key() je u api.js
   .replace(/đ/g, "dj").replace(/[čć]/g, "c").replace(/š/g, "s").replace(/ž/g, "z");
 
@@ -104,7 +104,7 @@ function populateSessions() {
 function renderCards() {
   const words = fold(st.q).split(" ").filter(Boolean);
 
-  // dok se nesto kuca u pretragu, trazi se kroz celu arhivu (sve sezone)
+  // dok se nesto kuca u pretragu, trazi se kroz celu arhivu
   const filtered = words.length
     ? VIDEOS.filter(video => {
         const hay = fold([video.season, video.gp, video.session, video.commentator].join(" "));
@@ -131,7 +131,7 @@ function renderCards() {
   $("grid").innerHTML = shown.map(video => {
     const colors = COL[video.session] || ["#9b000c", "#e10600"];
 
-    // zastava drzave kao pozadina (tamni preliv da tekst ostane citljiv)
+    // zastava drzave kao pozadina
     const flag = flagFor(video.gp, video.flag);
     if (!flag && !warned.has(video.gp)) {
       warned.add(video.gp);
@@ -233,3 +233,15 @@ $("q").oninput = e => {
   st.n = PAGE;
   renderCards();
 };
+
+// fiksni navbar kad se skroluje
+const bar = document.querySelector(".bar");
+
+window.addEventListener("scroll", () => {
+  if (window.scrollY > 120) {
+    bar.classList.add("fixed");
+  } else {
+    bar.classList.remove("fixed");
+  }
+});
+

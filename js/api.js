@@ -1,63 +1,60 @@
-// Link dobijen posle deploy-a Apps Script web app-a (zavrsava se na /exec)
+// Link iz APPSCRIPT-a (Google Sheets) preko kojeg dobijamo informacije o trkama i linkovima ka snimcima
 const API_URL = "https://script.google.com/macros/s/AKfycbz_jtk_DZGO12gmC2ZRJjzvbbgBMGwpRRzoSA01a2cNBAN6iZUcMhd8D6iW3UaXXa9WVQ/exec";
 
-const CACHE_KEY = "formulacija-cache";
+const CACHE_KEY = "formulacija-cache-v1";
 const CACHE_TIME = 1000 * 60 * 2; // 2 minuta
 
-// Popunjava se kad stignu podaci iz tabele (vidi script.js)
+// Popunjava se kad stignu podaci iz tabele
 let VIDEOS = [];
- 
+
 const SES_ORDER = ["Kvalifikacije", "Sprint", "Trka"];
 const MON = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"];
- 
-/* ---------- ucitavanje ---------- */
+
+/* Ucitavanje */
+function readCache() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CACHE_KEY));
+    if (parsed && Array.isArray(parsed.data)) return parsed;
+  } catch (e) {}
+  return null;
+}
+
 async function loadVideos() {
   if (!API_URL) throw new Error("API_URL nije podesen u api.js");
 
-  // Provera keša
-  const cache = localStorage.getItem(CACHE_KEY);
-  if (cache) {
-    try {
-      const parsed = JSON.parse(cache);
-      if (parsed && parsed.time && (Date.now() - parsed.time < CACHE_TIME) && parsed.data) {
-        return normalize(parsed.data);
-      }
-    } catch (e) {
-      // Ako je keš oštećen, nastavlja se dalje ka API-ju
-    }
-  }
+  // svez kes (manje od 2 minuta): ne zovemo API
+  const cached = readCache();
+  if (cached && Date.now() - cached.time < CACHE_TIME) return normalize(cached.data);
 
-  const res = await fetch(API_URL);
-  if (!res.ok) throw new Error("API: HTTP " + res.status);
-  const raw = await res.json();
-  if (!Array.isArray(raw)) throw new Error("API nije vratio listu");
-
-  // Upis u keš
   try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({
-        time: Date.now(),
-        data: raw
-      })
-    );
-  } catch (e) {
-    // Ignoriši grešku ako je localStorage pun
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error("API: HTTP " + res.status);
+    const raw = await res.json();
+    if (!Array.isArray(raw)) throw new Error("API nije vratio listu");
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ time: Date.now(), data: raw }));
+    } catch (e) {}
+    return normalize(raw);
+  } catch (err) {
+    // API ne radi: prikazi poslednje sacuvane podatke, bilo koje starosti
+    if (cached) {
+      console.warn("API nije dostupan, prikazujem sačuvane podatke:", err);
+      return normalize(cached.data);
+    }
+    throw err;
   }
-
-  return normalize(raw);
 }
  
-/* ---------- ciscenje unosa ---------- */
+/* ciscenje unosa */
 const clean = s => String(s ?? "").trim().replace(/\s+/g, " ");
 const key = s => clean(s).toLocaleLowerCase("sr");
  
-// "spa" -> "Spa", ali "SAD" i "Velika Britanija" ostaju kakvi su
+// "spa" == "Spa", ali "SAD" i "Velika Britanija" ostaju kakvi su
 const pretty = s => s === s.toLocaleLowerCase("sr")
   ? s.replace(/(^|[\s-])(\S)/g, (m, a, b) => a + b.toLocaleUpperCase("sr"))
   : s;
  
-// isto ime napisano drugacije (spa / Spa / SPA) postaje jedna stavka
+// isto ime napisano drugacije (spa / Spa / SPA) postaje jedna stvar (Spa)
 const canon = (map, v) => {
   const k = key(v);
   if (!map.has(k)) map.set(k, pretty(clean(v)));
@@ -87,7 +84,6 @@ const formatDate = d => d ? `${d.getDate()}. ${MON[d.getMonth()]} ${d.getFullYea
 const rank = s => { const i = SES_ORDER.indexOf(s); return i < 0 ? 99 : i; };
  
 // redovi iz tabele (kolone: sezona, vn, sesija, komentator, link, datum, trajanje)
-// -> objekti koje koristi script.js
 function normalize(raw) {
   const gps = new Map(), coms = new Map();
   const ses = new Map(SES_ORDER.map(s => [key(s), s]));
@@ -105,7 +101,7 @@ function normalize(raw) {
       link,
       date: formatDate(d),
       duration: clean(r.trajanje),
-      flag: clean(r.zastava),   // opciono: ISO kod drzave, npr. ae
+      flag: clean(r.zastava),   // opciono: skracenica kod drzave, npr. ae
       _ts: d ? +d : 0,
       _idx: idx
     });

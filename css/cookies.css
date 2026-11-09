@@ -1,0 +1,342 @@
+
+/* FORMULACIJA — COOKIE MANAGER */
+
+:root {
+  --fc-bg: #17171c;
+  --fc-panel: #202026;
+  --fc-border: rgba(255,255,255,.13);
+  --fc-text: #fff;
+  --fc-muted: #b7b7c0;
+  --fc-red: #9b000c;
+  --fc-red-bright: #e10600;
+  --fc-shadow: 0 18px 60px rgba(0,0,0,.48);
+}
+
+.fc-hidden {
+  display: none !important;
+}
+
+/* GLAVNI BANNER */
+
+.fc-banner {
+  position: fixed;
+  z-index: 2147483000;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  width: min(760px, calc(100% - 40px));
+  margin-inline: auto;
+  padding: 22px;
+  color: var(--fc-text);
+  background: var(--fc-bg);
+  border: 1px solid var(--fc-border);
+  border-top: 3px solid var(--fc-red-bright);
+  border-radius: 14px;
+  box-shadow: var(--fc-shadow);
+  font-family: inherit;
+}
+
+.fc-brand-row,
+.fc-settings-heading,
+.fc-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fc-brand {
+  color: var(--fc-text);
+  font-size: 1rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: .12em;
+}
+
+.fc-kicker {
+  color: #ff625e;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.fc-banner h2,
+.fc-settings h2 {
+  margin: 10px 0 7px;
+  color: var(--fc-text);
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.fc-banner p,
+.fc-settings p {
+  margin: 0;
+  color: var(--fc-muted);
+  font-size: .94rem;
+  line-height: 1.55;
+}
+
+.fc-banner a,
+.fc-settings a {
+  color: #ff7772;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* DUGMAD */
+
+.fc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.fc-btn {
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--fc-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fc-text);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    transform .18s ease;
+}
+
+.fc-btn:hover {
+  border-color: var(--fc-red-bright);
+  transform: translateY(-1px);
+}
+
+.fc-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.fc-btn-primary {
+  background: var(--fc-red);
+  border-color: var(--fc-red);
+}
+
+.fc-btn-primary:hover {
+  background: var(--fc-red-bright);
+  border-color: var(--fc-red-bright);
+}
+
+.fc-btn-quiet {
+  color: var(--fc-muted);
+}
+
+/* OVERLAY I PODESAVANJA */
+
+.fc-overlay {
+  position: fixed;
+  z-index: 2147483001;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0,0,0,.78);
+  backdrop-filter: blur(5px);
+}
+
+.fc-settings {
+  width: min(620px, 100%);
+  max-height: min(86vh, 760px);
+  overflow: auto;
+  padding: 24px;
+  color: var(--fc-text);
+  background: var(--fc-bg);
+  border: 1px solid var(--fc-border);
+  border-top: 3px solid var(--fc-red-bright);
+  border-radius: 15px;
+  box-shadow: var(--fc-shadow);
+  font-family: inherit;
+}
+
+.fc-close {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid var(--fc-border);
+  border-radius: 50%;
+  color: var(--fc-text);
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* KATEGORIJE */
+
+.fc-category-list {
+  margin-top: 18px;
+  border-top: 1px solid var(--fc-border);
+}
+
+.fc-category-row {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-category-copy {
+  min-width: 0;
+}
+
+.fc-category-copy strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--fc-text);
+}
+
+.fc-category-copy span {
+  display: block;
+  color: var(--fc-muted);
+  font-size: .87rem;
+  line-height: 1.4;
+}
+
+.fc-always-on {
+  color: #8fe0a2;
+  font-size: .82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+
+.fc-switch {
+  position: relative;
+  width: 48px;
+  height: 27px;
+  flex: 0 0 auto;
+}
+
+.fc-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.fc-switch span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px;
+  background: #41414a;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+
+.fc-switch span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .18s ease;
+}
+
+.fc-switch input:checked + span {
+  background: var(--fc-red);
+  border-color: var(--fc-red);
+}
+
+.fc-switch input:checked + span::after {
+  transform: translateX(21px);
+}
+
+.fc-switch input:focus-visible + span {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.fc-settings-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+/* DUGME ZA PONOVNO OTVARANJE */
+
+.fc-privacy-launcher {
+  position: fixed;
+  z-index: 2147482999;
+  right: 16px;
+  bottom: 16px;
+  padding: 9px 13px;
+  border: 1px solid var(--fc-border);
+  border-radius: 999px;
+  background: #17171c;
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(0,0,0,.3);
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fc-privacy-launcher:hover {
+  border-color: var(--fc-red-bright);
+}
+
+/* MOBILNI UREDJAJI */
+
+@media (max-width: 600px) {
+  .fc-banner {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: calc(100% - 20px);
+    padding: 17px;
+  }
+
+  .fc-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .fc-actions .fc-btn {
+    width: 100%;
+  }
+
+  .fc-settings {
+    padding: 18px;
+  }
+
+  .fc-settings-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .fc-settings-footer .fc-btn {
+    width: 100%;
+  }
+
+  .fc-privacy-launcher {
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+/* PODESAVANJE ZA KORISNIKE KOJI NE ZELE ANIMACIJE */
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-btn,
+  .fc-switch span,
+  .fc-switch span::after {
+    transition: none !important;
+  }
+}

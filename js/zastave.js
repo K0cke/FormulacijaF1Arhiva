@@ -6,16 +6,16 @@
 // =====================================================
 const FLAG_URL = code => `https://flagcdn.com/w640/${code}.png`;
 
-// mala slova, bez dijakritika: "Mađarska" -> "madjarska"
+// mala slova, bez kvacica: "Mađarska" == "madjarska"
 const norm = s => String(s ?? "").trim().toLocaleLowerCase("sr")
   .replace(/đ/g, "dj").replace(/[čć]/g, "c").replace(/š/g, "s").replace(/ž/g, "z")
   .replace(/\s+/g, " ");
 
-// [ime koje klijent moze da upise, ISO kod drzave]
-// Ako VN fali, dodaj red ovde, ili u tabeli popuni opcionu kolonu "zastava" (npr. ae).
+
+// Ako VN fali, dodaj red ovde
 const GP_COUNTRY = [
   ["Australija", "au"], ["Melburn", "au"], ["Adelejd", "au"],
-  ["Kina", "cn"], ["Šangaj", "cn"],
+  ["Kina", "cn"], ["Šangaj", "cn"], ["Sangaj", "cn"], ["Šangaj", "cn"], 
   ["Japan", "jp"], ["Suzuka", "jp"], ["Pacifik", "jp"], ["Fudži", "jp"],
   ["Bahrein", "bh"],
   ["Saudijska Arabija", "sa"], ["Džeda", "sa"],
@@ -26,11 +26,11 @@ const GP_COUNTRY = [
   ["Španija", "es"], ["Barselona", "es"], ["Madrdid", "es"],
   ["Kanada", "ca"], ["Montreal", "ca"],
   ["Austrija", "at"], ["Špilberg", "at"],
-  ["Velika Britanija", "gb"], ["Britanija", "gb"], ["Silverstoun", "gb"],
+  ["Velika Britanija", "gb"], ["Britanija", "gb"], ["Silverstoun", "gb"], ["Silverston", "gb"], ["Engleska", "gb"], 
   ["Belgija", "be"], ["Spa", "be"], ["Spa-Frankoršamp", "be"],
-  ["Mađarska", "hu"],
+  ["Mađarska", "hu"], ["Madjarska", "hu"],
   ["Holandija", "nl"], ["Zandvort", "nl"],
-  ["Azerbejdžan", "az"], ["Baku", "az"],
+  ["Azerbejdžan", "az"], ["Baku", "az"], ["Azerbejdzan", "az"],
   ["Singapur", "sg"],
   ["Meksiko", "mx"],
   ["Brazil", "br"], ["Interlagos", "br"], ["Sao Paulo", "br"],
@@ -44,7 +44,7 @@ const GP_COUNTRY = [
 
 const FLAG_MAP = new Map(GP_COUNTRY.map(([name, code]) => [norm(name), code]));
 
-// override = opciona kolona "zastava" iz tabele (ISO kod, npr. "ae")
+
 function flagFor(gp, override) {
   const o = norm(override);
   if (/^[a-z]{2}(-[a-z]{2,3})?$/.test(o)) return o;
