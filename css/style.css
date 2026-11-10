@@ -101,6 +101,19 @@ input {
   padding-right: clamp(14px, 3vw, 48px);
 }
 
+.bar {
+  transition: all .3s ease;
+}
+
+
+.bar.fixed nav a {
+  color: #fff;
+}
+
+.bar.fixed nav a:hover {
+  color: var(--red);
+}
+
 .stem {
   position: absolute;
   left: 0;
@@ -486,30 +499,7 @@ dialog::backdrop {
 }
 
 
-.bar {
-  transition: all .3s ease;
-}
 
-.bar.fixed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-
-  background: rgba(14,14,17,.9);
-  backdrop-filter: blur(14px);
-
-  border-bottom: 2px solid var(--red);
-  z-index: 9999;
-}
-
-.bar.fixed nav a {
-  color: #fff;
-}
-
-.bar.fixed nav a:hover {
-  color: var(--red);
-}
 
 /* FOOTER */
 footer {

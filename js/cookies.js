@@ -26,7 +26,7 @@
 
     VALID_DAYS: 180,
 
-    PRIVACY_URL: "./html/politikaprivatnosti.html#kolacici"
+    PRIVACY_URL: "./html/pravneinformacije.html#kolacici"
   };
 
   const OPTIONAL_CATEGORIES = [
