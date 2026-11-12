@@ -12,6 +12,18 @@ const COL = {
   Trka: ["#9b000c", "#e10600"]
 };
 
+// nazivi velikih nagrada iz vn u velika nagrada
+function displayGPName(gp) {
+
+  const names = {
+    "abu dhabi": "Abu Dabija",
+    "abu dabi": "Abu Dabija",
+    "abu dabija": "Abu Dabija"
+  };
+
+  return names[fold(gp)] || gp;
+}
+
 const PAGE = 9;   // koliko kartica se prikazuje odjednom
 
 const st = {
@@ -74,7 +86,7 @@ function populateGP() {
   $("gp").innerHTML =
     `<option value="">Sve Velike nagrade</option>` +
     gps.map(gp =>
-      `<option value="${esc(gp)}">${esc(gp)}</option>`
+      `<option value="${esc(gp)}">${esc(displayGPName(gp))}</option>`
     ).join("");
 
   st.gp = "";
@@ -176,10 +188,10 @@ function renderCards() {
     $("title").textContent = "Rezultati pretrage";
 
   } else if (st.gp && st.season) {
-    $("title").textContent = `VN ${st.gp} ${st.season}`;
+    $("title").textContent = `Velika Nagrada ${st.gp} ${st.season}`;
 
   } else if (st.gp) {
-    $("title").textContent = `VN ${st.gp}`;
+    $("title").textContent = `Velika Nagrada ${displayGPName(st.gp)}`;
 
   } else if (st.season) {
     $("title").textContent = `Sezona ${st.season}`;
@@ -217,6 +229,7 @@ function renderCards() {
 
   $("grid").innerHTML = shown.map(video => {
 
+    const gpName = displayGPName(video.gp);
     const colors = COL[video.session] ||
       ["#9b000c", "#e10600"];
 
@@ -248,13 +261,13 @@ function renderCards() {
              style="--c1:${colors[0]};--c2:${colors[1]};${bg}">
 
           <span class="tag">${esc(video.session)}</span>
-          <b>${esc(video.gp)}</b>
+          <b>${esc(gpName)}</b>
 
         </div>
 
         <div class="info">
 
-          <h3>VN ${esc(video.gp)} ${esc(video.season)}</h3>
+          <h3>Velika Nagrada ${esc(gpName)} ${esc(video.season)}</h3>
 
           ${DESC[video.session]
             ? `<p>${DESC[video.session]}</p>`

@@ -35,7 +35,7 @@ const GP_COUNTRY = [
   ["Meksiko", "mx"],
   ["Brazil", "br"], ["Interlagos", "br"], ["Sao Paulo", "br"],
   ["Katar", "qa"],
-  ["Abu Dabi", "ae"], ["Abu Dhabi", "ae"], ["UAE", "ae"],
+  ["Abu Dabi", "ae"], ["Abu Dabija", "ae"] ,["Abu Dhabi", "ae"], ["UAE", "ae"],
   ["Francuska", "fr"], ["Nemačka", "de"], ["Evropa", "de"], ["Nirburgring", "de"], ["Hokenhajm", "de"],
   ["Portugalija", "pt"], ["Turska", "tr"], ["Rusija", "ru"], ["Soči", "ru"],
   ["Malezija", "my"], ["Koreja", "kr"], ["Indija", "in"], ["Argentina", "ar"],
