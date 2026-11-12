@@ -7,7 +7,7 @@ const CACHE_TIME = 1000 * 60 * 2; // 2 minuta
 // Popunjava se kad stignu podaci iz tabele
 let VIDEOS = [];
 
-const SES_ORDER = ["Kvalifikacije", "Sprint", "Trka"];
+const SES_ORDER = ["Trening", "Kvalifikacije", "Sprint", "Trka"];
 const MON = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"];
 
 /* Ucitavanje */
