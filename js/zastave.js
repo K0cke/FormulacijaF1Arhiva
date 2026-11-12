@@ -18,7 +18,7 @@ const GP_COUNTRY = [
   ["Kine", "cn"], ["Šangaja", "cn"], ["Sangaja", "cn"], ["Šangaja", "cn"], 
   ["Japana", "jp"], ["Suzuke", "jp"], ["Pacifika", "jp"], ["Fudžija", "jp"],
   ["Bahreina", "bh"],
-  ["Saudijska Arabije", "sa"], ["Džede", "sa"],
+  ["Saudijske Arabije", "sa"], ["Džede", "sa"],
   ["SAD", "us"], ["Sjedinjenih Država", "us"], ["Amerike", "us"], ["Majamija", "us"], ["Miami", "us"], ["Austina", "us"], ["Teksasa", "us"], ["Las Vegasa", "us"], ["Detroita", "us"], ["Dalasa", "us"], ["Indijanapolisa", "us"],
   ["Italije", "it"], ["Monce", "it"], ["Monza", "it"], ["Emilija-Romanje", "it"], ["Imole", "it"], ["Toskane", "it"],
   ["San Marina", "sm"],
