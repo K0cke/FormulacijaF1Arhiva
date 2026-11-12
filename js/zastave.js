@@ -14,7 +14,7 @@ const norm = s => String(s ?? "").trim().toLocaleLowerCase("sr")
 
 // Ako VN fali, dodaj red ovde
 const GP_COUNTRY = [
-  ["Australija", "au"], ["Melburn", "au"], ["Adelejd", "au"],
+  ["Australije", "au"], ["Melburn", "au"], ["Adelejd", "au"],
   ["Kina", "cn"], ["Šangaj", "cn"], ["Sangaj", "cn"], ["Šangaj", "cn"], 
   ["Japan", "jp"], ["Suzuka", "jp"], ["Pacifik", "jp"], ["Fudži", "jp"],
   ["Bahrein", "bh"],
