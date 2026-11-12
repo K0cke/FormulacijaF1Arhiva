@@ -2,11 +2,11 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url>
-    <loc>https://TVOJ-DOMEN.com/</loc>
+    <loc>https://formulacija.com</loc>
   </url>
 
   <url>
-    <loc>https://TVOJ-DOMEN.com/html/pravneinformacije.html</loc>
+    <loc>https://formulacija.com/html/pravneinformacije.html</loc>
   </url>
 
 </urlset>
