@@ -1,12 +1,14 @@
 const $ = id => document.getElementById(id);
 
 const DESC = {
+  Trening: "Ceo trening, od prvog do poslednjeg minuta.",
   Kvalifikacije: "Cela kvalifikaciona sesija, od prvog do poslednjeg kruga.",
   Sprint: "Sprint trka od starta do cilja, sa svim duelima.",
   Trka: "Cela trka od formacionog kruga do kockaste zastave."
 };
 
 const COL = {
+  Trening: ["#1a0406", "#3a0810"],
   Kvalifikacije: ["#2a0509", "#6a0610"],
   Sprint: ["#7a0610", "#c40a14"],
   Trka: ["#9b000c", "#e10600"]
