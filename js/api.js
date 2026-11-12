@@ -1,5 +1,5 @@
 // Link iz APPSCRIPT-a (Google Sheets) preko kojeg dobijamo informacije o trkama i linkovima ka snimcima
-const API_URL = "https://script.google.com/macros/s/AKfycbz_jtk_DZGO12gmC2ZRJjzvbbgBMGwpRRzoSA01a2cNBAN6iZUcMhd8D6iW3UaXXa9WVQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbz0XKdsMCumankM6C8dg4TR4yw-JjEUDaXw8Mgriv32t-phVn0T92o6sA-Cg1-teBh90w/exec";
 
 const CACHE_KEY = "formulacija-cache-v1";
 const CACHE_TIME = 1000 * 60 * 2; // 2 minuta
