@@ -4,7 +4,6 @@
 
 Na jednom mestu okupljamo informacije i linkove ka dostupnim snimcima trka, kvalifikacija i sprintova, kako bismo olakšali pronalaženje i ponovno proživljavanje nezaboravnih trenutaka Formule 1.
 
-DEPLOYMENT TEST
 
 ---
 
